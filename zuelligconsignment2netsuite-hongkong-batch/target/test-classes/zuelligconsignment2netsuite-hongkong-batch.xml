@@ -1,0 +1,411 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:email="http://www.mulesoft.org/schema/mule/email" xmlns:cloudhub="http://www.mulesoft.org/schema/mule/cloudhub" xmlns:quartz="http://www.mulesoft.org/schema/mule/quartz" xmlns:ftp="http://www.mulesoft.org/schema/mule/ee/ftp" xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp" xmlns:ftps="http://www.mulesoft.org/schema/mule/ftps" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:netsuite="http://www.mulesoft.org/schema/mule/netsuite"
+	xmlns:batch="http://www.mulesoft.org/schema/mule/batch"
+	xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/netsuite http://www.mulesoft.org/schema/mule/netsuite/current/mule-netsuite.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/ftps http://www.mulesoft.org/schema/mule/ftps/current/mule-ftps.xsd
+http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd
+http://www.mulesoft.org/schema/mule/ee/ftp http://www.mulesoft.org/schema/mule/ee/ftp/current/mule-ftp-ee.xsd
+http://www.mulesoft.org/schema/mule/quartz http://www.mulesoft.org/schema/mule/quartz/current/mule-quartz.xsd
+http://www.mulesoft.org/schema/mule/cloudhub http://www.mulesoft.org/schema/mule/cloudhub/current/mule-cloudhub.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd">
+   
+<batch:job name="file2netsuite-hongkong-batch">
+        <batch:input>
+             <ftps:read config-ref="FTPS__Basic_Configuration" filePath="${zuelligconsignment2ns.inboundFilePath}" fileName="*.*" moveToDir="${zuelligconsignment2ns.archiveFilePath}" doc:name="FTPS (Streaming)"/>
+             <!-- <file:inbound-endpoint path="src/main/resources/inbound" moveToDirectory="src/main/resources/outbound" connector-ref="File" responseTimeout="10000" doc:name="File"/> -->
+            <dw:transform-message doc:name="transformTojava" metadata:id="2cf0ce23-fd75-4baa-b64e-22335ef9e69a">
+                <dw:input-payload mimeType="application/csv"/>
+                <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+payload]]></dw:set-payload>
+            </dw:transform-message>
+            <expression-component doc:name="CIFProperties"><![CDATA[if(flowVars.originalProcessDatetime!=null){
+	flowVars.originalProcessDatetime=flowVars.originalProcessDatetime;
+}
+else{
+	flowVars.originalProcessDatetime=server.dateTime.format("yyyy-MM-dd'T'HH:mm:ss.SSS");
+}
+if(flowVars.processActivityHeaderId!=null){
+	flowVars.processActivityHeaderId=flowVars.processActivityHeaderId;
+}
+else{
+	flowVars.processActivityHeaderId= "${ascensia.zuelligconsignment2ns.processId}"+flowVars.originalProcessDatetime+(new java.util.Random().nextInt(899999)+100000);	
+}
+
+if(flowVars.processStartDatetime!=null){
+	flowVars.processStartDatetime=flowVars.processStartDatetime;
+}
+else{
+	flowVars.processStartDatetime= server.dateTime.format("yyyy-MM-dd'T'HH:mm:ss.SSS");;
+}
+
+
+flowVars.sourceSystemId= "${ascensia.zuelligconsignment2ns.sourceSystemId}";
+flowVars.destinationSystemId= "${ascensia.zuelligconsignment2ns.destinationSystemId}";
+flowVars.processId= "${ascensia.zuelligconsignment2ns.processId}";
+flowVars.organizationId = "${ascensia.zuelligconsignment2ns.organizationId}";
+flowVars.convertionFlowName = 'zuelligconsignment2nsXMLPayloadValidateSubFlow';
+
+//flowVars.originalPayload = payload;
+//flowVars.fileName="address_"+server.dateTime.format("yyyyMMddhhmmss")+".txt";
+
+flowVars.recordCount=payload.size();
+flowVars.filterRecordCount=0;
+flowVars.processedRecordCount=0;
+flowVars.errorRecordCount=0;
+flowVars.unprocessedRecordCount=0;
+
+flowVars.statusId="INPROCESS";
+flowVars.comment="At Batch Start";
+
+flowVars.isDIMEnableFlag = "${zuelligconsignment2ns.isDIMEnableFlag}";
+flowVars.isIEMEnableFlag = "${zuelligconsignment2ns.isIEMEnableFlag}";
+flowVars.isLogDIMXMLPayloadFlag = "${zuelligconsignment2ns.isLogDIMXMLPayloadFlag}";
+flowVars.isLogDIMSourcePayloadFlag = "${zuelligconsignment2ns.isLogDIMSourcePayloadFlag}";
+flowVars.isLogDIMDestinationPayloadFlag = "${zuelligconsignment2ns.isLogDIMDestinationPayloadFlag}";
+flowVars.isLogIEMSourcePayloadFlag = "${zuelligconsignment2ns.isLogIEMSourcePayloadFlag}";
+flowVars.isLogIEMDestinationPayloadFlag = "${zuelligconsignment2ns.isLogIEMDestinationPayloadFlag}";]]></expression-component>
+            <expression-component doc:name="expressionForCustInternalId"><![CDATA[if("${env}" == 'test' or 'prod')
+{
+flowVars.customerInternalId=${zuelligconsignment2ns.testcustomerInternalId};
+}else
+flowVars.customerInternalId=${zuelligconsignment2ns.devCustomerInternalId};]]></expression-component>
+            <flow-ref name="publicDIMBatch" doc:name="publicDIMBatch"/>
+            <invoke object-ref="SequenceIdGen" method="initializeSequcence" methodArguments="#[flowVars.batchJobInstanceId]" methodArgumentTypes="java.lang.String" doc:name="SequenceIdGen"/>
+        </batch:input>
+        <batch:process-records>
+          <batch:step name="GenerateSequnceStep">
+                <enricher target="#[recordVars.processSequence]" doc:name="Message Enricher">
+                    <invoke object-ref="SequenceIdGen" method="getNextSequcenceId" methodArguments="#[flowVars.batchJobInstanceId]" methodArgumentTypes="java.lang.String" doc:name="getNextSequcenceId"/>
+                </enricher>
+            </batch:step>
+            <!-- <batch:step name="businessLogicBatchStep">
+                <batch:set-record-variable variableName="originalPayload" value="#[payload]" doc:name="subPayloadRecordVar"/>
+                <batch:set-record-variable variableName="orderTypeValue" value="#[payload['&#65279;Order Type']]" doc:name="recordVarForIV"/>
+                <expression-component doc:name="VarsForLog"><![CDATA[//for every log
+flowVars.loggingEntry="Batch-ProcessPhase-Log"; //Entry id from logging-metadata.json
+flowVars.loggingMessageValue="order type value is "; //log message
+
+
+flowVars.payloadAttributesValue=new java.util.HashMap();
+flowVars.payloadAttributesValue.put(' InternalID',recordVars.orderTypeValue);  
+
+
+]]></expression-component>
+                <logger message="#[LoggingAppendString]" level="DEBUG" category="com.ascensia.zuellig2ns" doc:name="Logger"/>
+                <choice doc:name="Choice">
+                    <when expression="#[payload['&#65279;Order Type']=='${zuelligconsignment2ns.consignmentCreditMemo}']">
+                        <dw:transform-message doc:name="consignmentCreditMemoTargetFieldsMapping">
+                            <dw:input-payload mimeType="application/java"/>
+                            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+
+customFieldList: {
+	customField: [{
+		StringCustomFieldRef__custrecord_adc_cm_credit_number: payload.'Zuellig Invoice Number',
+		StringCustomFieldRef__custrecord_adc_cm_end_customer: payload.'Zuellig End Customer Code',
+		LongCustomFieldRef__custrecord_adc_cm_quantity: payload.'Quantity' as :number,
+		DoubleCustomFieldRef__custrecord_adc_credit_rate: payload.'Zuellig Invoice value' as :number,
+		StringCustomFieldRef__custrecord_adc_cm_order_type: recordVars.orderTypeValue,
+		StringCustomFieldRef__custrecord_adc_cm_customer_group: payload.'Zuellig Customer Group',
+		StringCustomFieldRef__custrecord_adc_cm_billing_date: payload.'Billing Date' as :date {format:"yyyyMMdd"} as :date{format:"dd/MMMM/yyyy"},
+		StringCustomFieldRef__custrecord_adc_cm_return_code: payload.'Zuellig Return Code',
+		StringCustomFieldRef__custrecord_adc_cm_item_code: payload.'Zuellig Item Code',
+		StringCustomFieldRef__custrecord_adc_cm_batch_number: payload.'Zuellig Batch Number',
+		SelectCustomFieldRef__custrecord_adc_cm_ns_customer: {
+			internalId: flowVars.customerInternalId
+		}
+	}]
+}]]></dw:set-payload>
+                        </dw:transform-message>
+                        <netsuite:add-record config-ref="NetSuite__Login_Authentication" recordType="__customRecordType__customrecord_consignment_credit_memo__700" doc:name="addRecordToConsignementCredirMemo"/>
+                        <expression-component doc:name="VarsForLog"><![CDATA[//for every log
+flowVars.loggingEntry="Batch-ProcessPhase-Log"; //Entry id from logging-metadata.json
+flowVars.loggingMessageValue="Netsuite internal id for consignmentCreditMemo is "; //log message
+
+
+flowVars.payloadAttributesValue=new java.util.HashMap();
+flowVars.payloadAttributesValue.put(' InternalID',payload.internalId);  
+
+
+]]></expression-component>
+                        <logger message="#[LoggingAppendString]" level="DEBUG" category="com.ascensia.zuellig2ns" doc:name="Logger"/>
+                    </when>
+                    <when expression="#[payload['&#65279;Order Type']=='${zuelligconsignment2ns.consignmentOrderType}']">
+                        <dw:transform-message doc:name="consignmentOrdersTargetFieldsMapping">
+                            <dw:input-payload mimeType="application/java"/>
+                            <dw:set-payload><![CDATA[	  %dw 1.0
+%output application/java
+
+customFieldList: {
+	customField: [{
+		StringCustomFieldRef__custrecord_adc_iv_order_type: recordVars.orderTypeValue,
+		StringCustomFieldRef__custrecord_adc_iv_customer_group: payload.'Zuellig Customer Group',
+		StringCustomFieldRef__custrecord_adc_iv_end_customer: payload.'Zuellig End Customer Code',
+		StringCustomFieldRef__custrecord_adc_iv_invoice_number: payload.'Zuellig Invoice Number',
+		StringCustomFieldRef__custrecord_adc_iv_billing_date: payload.'Billing Date' as :date {format:"yyyyMMdd"} as :date{format:"dd/MMMM/yyyy"},
+		StringCustomFieldRef__custrecord_adc_iv_item_code: payload.'Zuellig Item Code',
+		StringCustomFieldRef__custrecord_adc_iv_batch_number: payload.'Zuellig Batch Number',
+		StringCustomFieldRef__custrecord_adc_iv_quantity: payload.'Quantity' as :number,
+		DoubleCustomFieldRef__custrecord_adc_iv_invoice_rate: payload.'Zuellig Invoice value' as :number {format: "#.##"},
+		StringCustomFieldRef__custrecord_adc_iv_return_code: payload.'Zuellig Return Code',
+		SelectCustomFieldRef__custrecord_adc_iv_ns_customer: {
+			internalId: flowVars.customerInternalId
+		}
+	}]
+}]]></dw:set-payload>
+                        </dw:transform-message>
+                        <netsuite:add-record config-ref="NetSuite__Login_Authentication" recordType="__customRecordType__customrecord_consignment_orders__699" doc:name="addRecordToConsignementOrders"/>
+                        <expression-component doc:name="VarsForLog"><![CDATA[//for every log
+flowVars.loggingEntry="Batch-ProcessPhase-Log"; //Entry id from logging-metadata.json
+flowVars.loggingMessageValue="Netsuite internal id for consignmentOrders is "; //log message
+
+
+flowVars.payloadAttributesValue=new java.util.HashMap();
+flowVars.payloadAttributesValue.put(' InternalID',payload.internalId);  
+
+
+]]></expression-component>
+                        <logger message="#[LoggingAppendString]" level="DEBUG" category="com.ascensia.zuellig2ns" doc:name="Logger"/>
+                    </when>
+                    <otherwise>
+                        <expression-component doc:name="VarsForLog"><![CDATA[flowVars.loggingEntry="Batch-ProcessPhase-Log";
+flowVars.loggingMessageValue="orderType is neither IV nor CR";
+]]></expression-component>
+                        <logger message="#[LoggingAppendString]" level="INFO" category="com.ascensia.zuellig2ns" doc:name="Logger"/>
+                    </otherwise>
+                </choice>
+            </batch:step>
+ -->           
+                <batch:step name="consignmentCreditMemoStep" accept-expression="#[payload['&#65279;Order Type']=='${zuelligconsignment2ns.consignmentCreditMemo}']">
+                <!-- <batch:set-record-variable variableName="orderTypeValue1" value="#[payload['&#65279;Order Type']]" doc:name="recordVarForCR"/> -->
+                <batch:commit size="${zuelligconsignment2ns.batchCommitSize}" doc:name="Batch Commit">
+                    <dw:transform-message doc:name="consignmentCreditMemoTargetFieldsMapping">
+                        <dw:input-payload mimeType="application/java"/>
+                        <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+(payload map { customFieldList: {
+	customField: [
+		{
+		StringCustomFieldRef__custrecord_adc_cm_credit_number: payload.'Zuellig Invoice Number',
+		StringCustomFieldRef__custrecord_adc_cm_end_customer: payload.'Zuellig End Customer Code',
+		LongCustomFieldRef__custrecord_adc_cm_quantity: payload.'Quantity',
+		DoubleCustomFieldRef__custrecord_adc_credit_rate: payload.'Zuellig Invoice value',
+		StringCustomFieldRef__custrecord_adc_cm_order_type: 'CR',
+		StringCustomFieldRef__custrecord_adc_cm_customer_group: payload.'Zuellig Customer Group',
+		StringCustomFieldRef__custrecord_adc_cm_billing_date: payload.'Billing Date',
+		StringCustomFieldRef__custrecord_adc_cm_return_code: payload.'Zuellig Return Code',
+		StringCustomFieldRef__custrecord_adc_cm_item_code: payload.'Zuellig Item Code',
+		StringCustomFieldRef__custrecord_adc_cm_batch_number: payload.'Zuellig Batch Number',
+		SelectCustomFieldRef__custrecord_adc_cm_ns_customer: {
+			internalId: flowVars.customerInternalId
+		}
+	}]}})]]></dw:set-payload>
+                    </dw:transform-message>
+                    <netsuite:add-list config-ref="NetSuite__Login_Authentication" recordType="__customRecordType__customrecord_consignment_credit_memo__700" doc:name="addRecordToConsignementCredirMemo"/>
+                    <logger message="Record got created for consignment credit memo" level="INFO" doc:name="Logger"/>
+                </batch:commit>
+
+            </batch:step>
+
+            <batch:step name="consignmentOrdersStep" accept-expression="#[payload['&#65279;Order Type']=='${zuelligconsignment2ns.consignmentCreditMemo}']">
+                <batch:commit size="${zuelligconsignment2ns.batchCommitSize}" doc:name="Batch Commit">
+                    <dw:transform-message doc:name="consignmentOrdersTargetFieldsMapping">
+                        <dw:input-payload mimeType="application/java"/>
+                        <dw:set-payload><![CDATA[	  %dw 1.0
+%output application/java
+---
+(payload map { customFieldList: {
+	customField: [
+		{
+		StringCustomFieldRef__custrecord_adc_iv_order_type: 'IV',
+		StringCustomFieldRef__custrecord_adc_iv_customer_group: payload.'Zuellig Customer Group',
+		StringCustomFieldRef__custrecord_adc_iv_end_customer: payload.'Zuellig End Customer Code',
+		StringCustomFieldRef__custrecord_adc_iv_invoice_number: payload.'Zuellig Invoice Number',
+		StringCustomFieldRef__custrecord_adc_iv_billing_date: payload.'Billing Date',
+		StringCustomFieldRef__custrecord_adc_iv_item_code: payload.'Zuellig Item Code',
+		StringCustomFieldRef__custrecord_adc_iv_batch_number: payload.'Zuellig Batch Number',
+		StringCustomFieldRef__custrecord_adc_iv_quantity: payload.'Quantity',
+		//DoubleCustomFieldRef__custrecord_adc_iv_invoice_rate: payload.'Zuellig Invoice value' as :number {format: "#.##"},
+		DoubleCustomFieldRef__custrecord_adc_iv_invoice_rate: payload.'Zuellig Invoice value',
+		StringCustomFieldRef__custrecord_adc_iv_return_code: payload.'Zuellig Return Code',
+		SelectCustomFieldRef__custrecord_adc_iv_ns_customer: {
+			internalId: flowVars.customerInternalId
+		}
+	}
+	]
+}})]]></dw:set-payload>
+                    </dw:transform-message>
+                    <netsuite:add-list config-ref="NetSuite__Login_Authentication" recordType="__customRecordType__customrecord_consignment_orders__699" doc:name="addRecordToConsignementOrders"/>
+                    <logger message="record got created for consignment orders" level="INFO" doc:name="Logger"/>
+                </batch:commit>
+
+            </batch:step>
+           
+            <batch:step name="CIFSuccessStep">
+                <expression-component doc:name="Set CIFParams"><![CDATA[if(flowVars.processStartDatetime!=null){
+                flowVars.processStartDatetime=flowVars.processStartDatetime;
+}
+else{
+                flowVars.processStartDatetime= server.dateTime.format("yyyy-MM-dd'T'HH:mm:ss.SSS");;
+}
+//flowVars.processSourcePayload  = recordVars.originalPayload;
+//flowVars.processDestinationPayload = recordVars.originalPayload;
+
+flowVars.statusId="SUCCESS";]]></expression-component>
+                <flow-ref name="publicDIMInprocess" doc:name="publicDIMInprocess"/>
+            </batch:step>
+            <batch:step name="CIFFailureStep" accept-policy="ONLY_FAILURES">
+                <expression-component doc:name="Set CIFParams"><![CDATA[if(flowVars.processStartDatetime!=null){
+                flowVars.processStartDatetime=flowVars.processStartDatetime;
+}
+else{
+                flowVars.processStartDatetime= server.dateTime.format("yyyy-MM-dd'T'HH:mm:ss.SSS");;
+}
+//flowVars.processSourcePayload  = recordVars.originalPayload;
+//flowVars.processDestinationPayload = recordVars.originalPayload;
+
+flowVars.statusId="ERROR";
+stepexception=getLastException();
+flowVars.exceptionFullStack=org.mule.util.ExceptionUtils.getFullStackTrace(stepexception);
+if(  com.ascensia.utils.ExceptionUtil.causedBy(stepexception,org.mule.extension.validation.api.ValidationException)) 
+{
+flowVars.errorMessage=stepexception.cause.message;
+flowVars.errorCode ='ADC_Data_0001';
+flowVars.errorType= 'Data';
+}
+else if(com.ascensia.utils.ExceptionUtil.causedBy(stepexception,com.mulesoft.weave.mule.exception.WeaveExecutionException))
+{
+flowVars.errorMessage=stepexception.cause.message;;
+flowVars.errorCode ='ADC_Data_0002';
+flowVars.errorType= 'Data';
+}
+else if(com.ascensia.utils.ExceptionUtil.causedBy(stepexception,org.mule.api.transformer.TransformerException)) 
+{
+flowVars.errorMessage=stepexception.cause.message;;
+flowVars.errorCode ='ADC_Data_0002';
+flowVars.errorType= 'Data';
+} else {
+flowVars.errorMessage=stepexception.cause.message;
+flowVars.errorCode ='ADCTech_0006';
+flowVars.errorType= 'Technical';
+}
+
+flowVars.errorMessage=  flowVars.errorCode +" :: "+flowVars.errorMessage;]]></expression-component>
+                <flow-ref name="publicDIMInprocess" doc:name="publicDIMInprocess"/>
+                <flow-ref name="publicIEMInprocess" doc:name="publicIEMInprocess"/>
+            </batch:step>
+           
+        </batch:process-records>
+        <batch:on-complete>
+            <scatter-gather doc:name="Scatter-Gather">
+                <processor-chain>
+                    <expression-component doc:name="Set CIFParams"><![CDATA[if(flowVars.processStartDatetime!=null){
+                flowVars.processStartDatetime=flowVars.processStartDatetime;
+}
+else{
+                flowVars.processStartDatetime= server.dateTime.format("yyyy-MM-dd'T'HH:mm:ss.SSS");;
+}
+if(payload.failedRecords>0){
+	flowVars.statusId="ERROR";
+}else{
+	flowVars.statusId="SUCCESS";
+}
+flowVars.comment="At Batch On Complete";
+flowVars.recordCount=payload.totalRecords;
+flowVars.processedRecordCount=payload.processedRecords;
+flowVars.errorRecordCount=payload.failedRecords;
+flowVars.unprocessedRecordCount=payload.totalRecords-payload.processedRecords;
+flowVars.filterRecordCount=0;]]></expression-component>
+                    <flow-ref name="publicDIMBatch" doc:name="publicDIMBatch"/>
+                    <invoke object-ref="SequenceIdGen" method="clearSequcence" methodArguments="#[flowVars.batchJobInstanceId]" methodArgumentTypes="java.lang.String" doc:name="clearSequcence"/>
+                </processor-chain>
+                <processor-chain>
+                    <expression-component doc:name="alertExpression"><![CDATA[flowVars.period=server.dateTime.format("d-MMM-yyyy:H:mm:ss").toUpperCase();
+flowVars.cifURL="https://"+'${cif.web.hostname}'+":"+'${cif.web.port}'+'${cif.web.app.context.root}'+'${cif.login.url}';
+flowVars.totalRecords = payload.totalRecords;
+flowVars.successfulRecords = payload.successfulRecords;
+flowVars.failedRecords = payload.failedRecords;
+if (payload.totalRecords>0  and payload.failedRecords==0) {
+flowVars.batchStatus="SUCCESS";
+flowVars.batchDesc="processed batch transaction with all success records.";
+} 
+else if (payload.totalRecords==payload.failedRecords){
+flowVars.batchStatus="ERROR:failed/all";
+flowVars.batchDesc="processed fail batch transaction for all records.";
+}
+else if (payload.totalRecords>0 and payload.failedRecords>0){
+flowVars.batchStatus="ERROR:partial/failed";
+flowVars.batchDesc="processed batch transaction as partial/failed.";
+}
+else if(payload.totalRecords==0)
+{
+flowVars.batchStatus="SUCCESS";
+flowVars.batchDesc="processed successfully, but no further updates in source system to be process transaction.";
+}
+else 
+{
+flowVars.batchStatus="ERROR";
+flowVars.batchDesc="batch transaction not processed successfully.";
+}
+
+]]></expression-component>
+                    <cloudhub:create-notification config-ref="Cloudhub__Basic_Auth_Authentication" domain="${zuellig2netsuite.alert.domain}" message="Batch Status: Total Records processed: #[payload.totalRecords]. Successful records: #[payload.successfulRecords]. Failed Records: #[payload.failedRecords]" priority="INFO" doc:name="Cloudhub">
+                        <cloudhub:custom-properties>
+                            <cloudhub:custom-property key="period">#[flowVars.period]</cloudhub:custom-property>
+                            <cloudhub:custom-property key="batchStatus">#[flowVars.batchStatus]</cloudhub:custom-property>
+                            <cloudhub:custom-property key="batchDesc">#[flowVars.batchDesc]</cloudhub:custom-property>
+                            <cloudhub:custom-property key="activityId">#[flowVars.processActivityHeaderId]</cloudhub:custom-property>
+                            <cloudhub:custom-property key="cifURL">#[flowVars.cifURL]</cloudhub:custom-property>
+                            <cloudhub:custom-property key="totalRecords">#[flowVars.totalRecords]</cloudhub:custom-property>
+							 <cloudhub:custom-property key="successfulRecords">#[flowVars.successfulRecords]</cloudhub:custom-property>
+						   <cloudhub:custom-property key="failedRecords">#[flowVars.failedRecords]</cloudhub:custom-property>
+                        </cloudhub:custom-properties>
+                    </cloudhub:create-notification>
+                </processor-chain>
+            </scatter-gather>
+        </batch:on-complete>
+    </batch:job>
+
+    <!-- <sub-flow name="file2netsuite-hongkong-batchSub_Flow">
+        <set-variable variableName="requestPayload" value="#[payload]" doc:name="Variable"/>
+        <flow-ref name="getPriceTypeId" doc:name="getPriceTypeId"/>
+        <set-payload value="#[flowVars.requestPayload]" doc:name="Set Payload"/>
+    </sub-flow>
+    <flow name="getPriceTypeId">
+        <expression-component doc:name="Expression"><![CDATA[flowVars.name= "HK " + payload.'Zuellig Customer Group';]]></expression-component>
+        <logger message="priceLevel Name is #[flowVars.name]" level="INFO" doc:name="Logger"/>
+        <db:select config-ref="Generic_Database_Configuration" doc:name="Database">
+            <db:parameterized-query><![CDATA[select PRICE_TYPE_ID from PRICE_TYPES where NAME=#[flowVars.name]]]></db:parameterized-query>
+
+
+
+
+        </db:select>
+        <set-variable variableName="priceTypeId" value="#[payload[0].PRICE_TYPE_ID]" doc:name="Variable"/>
+        <logger message="final db paylaod is #[payload]" level="INFO" doc:name="Logger"/>
+    </flow> -->
+    <sub-flow name="zuelligconsignment2nsXMLPayloadValidateSubFlow">
+        <dw:transform-message doc:name="JavaExpReport2XmlExpReport">
+            <dw:input-payload mimeType="application/java"/>
+            <dw:set-payload resource="classpath:dataWeaveCode/javaExpReport2XMLExpReport.dwl"/>
+        </dw:transform-message>
+        <object-to-string-transformer doc:name="ExpenseReportObject2String"/>
+        <set-variable variableName="xmlPayload" value="#[payload.replaceAll(&quot;\n&quot;, &quot;&quot;)]" doc:name="xmlPayload"/>
+    </sub-flow>
+</mule>

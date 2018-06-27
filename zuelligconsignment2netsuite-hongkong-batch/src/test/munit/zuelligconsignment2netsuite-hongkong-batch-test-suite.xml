@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:netsuite="http://www.mulesoft.org/schema/mule/netsuite"
+	xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
+	xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:ftp="http://www.mulesoft.org/schema/mule/ee/ftp"
+	xmlns:ftps="http://www.mulesoft.org/schema/mule/ftps"
+	xmlns:mock="http://www.mulesoft.org/schema/mule/mock" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:spring="http://www.springframework.org/schema/beans" xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/netsuite http://www.mulesoft.org/schema/mule/netsuite/current/mule-netsuite.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd
+http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-current.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/ftp http://www.mulesoft.org/schema/mule/ee/ftp/current/mule-ftp-ee.xsd
+http://www.mulesoft.org/schema/mule/ftps http://www.mulesoft.org/schema/mule/ftps/current/mule-ftps.xsd
+http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/mock http://www.mulesoft.org/schema/mule/mock/current/mule-mock.xsd">
+    <munit:config name="munit" doc:name="MUnit configuration"/>
+    <spring:beans>
+        <spring:import resource="classpath:zuelligconsignment2netsuite-hongkong-batch.xml"/>
+    </spring:beans>
+    
+    
+    <spring:beans>
+        <spring:import resource="classpath:logging-config.xml"/>
+        <spring:import resource="classpath:cloudhubconfiguration.xml"/>
+        <spring:bean id="SequenceIdGen" name="SequenceIdGen" class="com.ascensia.utils.SequenceIdGen" scope="singleton"/>
+        <spring:import resource="classpath:cifbatchlogging.xml"/>
+    </spring:beans>
+    <!--  <sftp:connector name="SFTP" validateConnections="true" doc:name="SFTP"/>
+    <ftp:connector name="FTP" pollingFrequency="1000" validateConnections="true" doc:name="FTP"/>
+    --> <ftps:config name="FTPS__Basic_Configuration" host="52.166.188.91" port="21210" sslEncryptionMode="EXPLICIT" username="zuellig-qa" password="2sd$7LJ+" disableCertificateValidation="true" doc:name="FTPS: Basic Configuration"/>
+    
+    <file:connector name="File" autoDelete="true" streaming="true" validateConnections="true" doc:name="File"/>
+    <context:property-placeholder location="classpath:properties/${env}/netsuite.properties,classpath:properties/${env}/cif.properties,classpath:properties/zuelligconsignment-ns-integrations-${env}.properties,classpath:properties/${env}/cloudhub.properties,classpath:properties/${env}/anypoint-mq.properties"/>
+    <netsuite:config-login-authentication name="NetSuite__Login_Authentication" email="${netsuite.username}" password="${netsuite.password}" account="${netsuite.account}" roleId="${netsuite.roleId}" applicationId="${netsuite.applicationId}" connectionTimeout="${netsuite.ConnectionTimeOut}" receiveTimeout="${netsuite.reciveTimeOut}" restletEndpoint="${netsuite.restlet.endpoint}" endpoint="${netsuite.endpoint}" doc:name="NetSuite: Login Authentication"    />
+    <http:request-config name="CIF_HTTPS_Configuration_Order" protocol="HTTPS" host="${cif.web.hostname}" port="${cif.web.port}" basePath="${cif.web.app.context.root}" connectionIdleTimeout="${cif.web.connectionIdleTimeout}" doc:name="HTTP Request Configuration">
+        <http:basic-authentication username="${cif.web.username}" password="${cif.web.password}"/>
+        <tls:context>
+            <tls:trust-store path="${cif.web.keystore.path}" password="${cif.web.keystore.password}" type="jks"/>
+        </tls:context>
+    </http:request-config>
+    <munit:test name="zuelligconsignment2netsuite-hongkong-batch-test-suite-file2netsuite-hongkong-batchTest" description="Test">
+        <mock:when messageProcessor=".*:.*" doc:name="Mock">
+            <mock:with-attributes>
+                <mock:with-attribute name="doc:name" whereValue="#['addRecordToConsignementCredirMemo']"/>
+            </mock:with-attributes>
+            <mock:then-return payload="record added to consignment credit memo"/>
+        </mock:when>
+        <mock:when messageProcessor=".*:.*" doc:name="Mock">
+            <mock:with-attributes>
+                <mock:with-attribute name="doc:name" whereValue="#['addRecordToConsignementOrders']"/>
+            </mock:with-attributes>
+            <mock:then-return payload="record added to consignment orders"/>
+        </mock:when>
+        <munit:set payload="#[getResource(&quot;inbound/Bayer_SD_IDoc_300_20180131.csv&quot;).asString()]" doc:name="Set Message"/>
+        <batch:execute name="file2netsuite-hongkong-batch" doc:name="file2netsuite-hongkong-batch"/>
+        <munit:set payload="process completed" doc:name="Set Message"/>
+    </munit:test>
+</mule>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:secure-property-placeholder="http://www.mulesoft.org/schema/mule/secure-property-placeholder"
+	xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp"
+	xmlns:ftp="http://www.mulesoft.org/schema/mule/ee/ftp"
+	xmlns:ftps="http://www.mulesoft.org/schema/mule/ftps"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:spring="http://www.springframework.org/schema/beans" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:netsuite="http://www.mulesoft.org/schema/mule/netsuite" xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:context="http://www.springframework.org/schema/context" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/secure-property-placeholder http://www.mulesoft.org/schema/mule/secure-property-placeholder/current/mule-secure-property-placeholder.xsd http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd
+http://www.mulesoft.org/schema/mule/ee/ftp http://www.mulesoft.org/schema/mule/ee/ftp/current/mule-ftp-ee.xsd
+http://www.mulesoft.org/schema/mule/ftps http://www.mulesoft.org/schema/mule/ftps/current/mule-ftps.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/netsuite http://www.mulesoft.org/schema/mule/netsuite/current/mule-netsuite.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+    <spring:beans>
+        <spring:import resource="classpath:logging-config.xml"/>
+        <spring:import resource="classpath:cloudhubconfiguration.xml"/>
+        <spring:bean id="SequenceIdGen" name="SequenceIdGen" class="com.ascensia.utils.SequenceIdGen" scope="singleton"/>
+        <spring:import resource="classpath:cifbatchlogging.xml"/>
+    </spring:beans>
+    <!--  <sftp:connector name="SFTP" validateConnections="true" doc:name="SFTP"/>
+    <ftp:connector name="FTP" pollingFrequency="1000" validateConnections="true" doc:name="FTP"/>
+    --> <ftps:config name="FTPS__Basic_Configuration" host="52.166.188.91" port="21210" sslEncryptionMode="EXPLICIT" username="zuellig-qa" password="2sd$7LJ+" disableCertificateValidation="true" doc:name="FTPS: Basic Configuration"/>
+    
+    <file:connector name="File" autoDelete="true" streaming="true" validateConnections="true" doc:name="File"/>
+   <secure-property-placeholder:config
+		name="Secure_Property_Placeholder" encryptionAlgorithm="Blowfish" key="${local.key}"		location="classpath:properties/zuelligconsignment-ns-integrations-${env}.properties" ignoreUnresolvablePlaceholders="true" doc:name="Secure Property Placeholder" />
+	<secure-property-placeholder:config
+		name="Cif_Security_Property" encryptionAlgorithm="Blowfish" key="${global.key}"		location="classpath:properties/${env}/netsuite.properties,classpath:properties/${env}/cif.properties,classpath:properties/${env}/cloudhub.properties,classpath:properties/${env}/anypoint-mq.properties"
+		ignoreUnresolvablePlaceholders="true" doc:name="Secure Property Placeholder" />
+    <netsuite:config-login-authentication name="NetSuite__Login_Authentication" email="${netsuite.username}" password="${netsuite.password}" account="${netsuite.account}" roleId="${netsuite.roleId}" applicationId="${netsuite.applicationId}" connectionTimeout="${netsuite.ConnectionTimeOut}" receiveTimeout="${netsuite.reciveTimeOut}" restletEndpoint="${netsuite.restlet.endpoint}" endpoint="${netsuite.endpoint}" doc:name="NetSuite: Login Authentication"    />
+    <http:request-config name="CIF_HTTPS_Configuration_Order" protocol="HTTPS" host="${cif.web.hostname}" port="${cif.web.port}" basePath="${cif.web.app.context.root}" connectionIdleTimeout="${cif.web.connectionIdleTimeout}" doc:name="HTTP Request Configuration">
+        <http:basic-authentication username="${cif.web.username}" password="${cif.web.password}"/>
+        <tls:context>
+            <tls:trust-store path="${cif.web.keystore.path}" password="${cif.web.keystore.password}" type="jks"/>
+        </tls:context>
+    </http:request-config>
+</mule>
