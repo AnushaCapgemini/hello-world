@@ -1,5 +1,0 @@
-orderType,SalesOrganization,DistributionChannel,Division,SalesOffice,SalesGroup,ZuelligEndCustomerCode,Ship-to-party,Payer,Sold-to-party,ZuelligInvoiceNumber,PONumber,ZuelligCustomerGroup,CustomerGroup,ZuelligReturnCode,OrderReason,BillingDate,PaymentTerms,Plant,ShippingPoint,ZuelligItemCode,Material,ZuelligBatchNumber,Batch,Quantity,ZuelligInvoicevalue
-CR,,,,,,123000,,,,4150054584,,G1,,ABP,,20170921,,,,2.87E+11,,DP7DLHD03B,,-24,0
-IV,,,,,,789000,,,,1150676847,,M4,,,,20170921,,,,2.87E+11,,DP6KLHC31C,,2,0
-IV,,,,,,456000,,,,1150674903,,K1,,,,20170921,,,,2.87E+11,,7Y6877AA,,4,1000
-CR,,,,,,120056,,,,4150054584,,G1,,ABP,,20170921,,,,2.87E+11,,DP7DLHD03B,,-24,0
