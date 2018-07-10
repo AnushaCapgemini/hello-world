@@ -18,6 +18,15 @@
 
 	<build>
 		<plugins>
+		<plugin>
+				<artifactId>maven-deploy-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>default-deploy</id>
+						<phase>none</phase>
+					</execution>
+				</executions>
+			</plugin>
 			<plugin>
 				<groupId>org.mule.tools.maven</groupId>
 				<artifactId>mule-app-maven-plugin</artifactId>
@@ -52,7 +61,27 @@
 							</resources>
 						</configuration>
 					</execution>
+					<execution>
+						<id>mule-deploy</id>
+						<phase>deploy</phase>
+						<goals>
+							<goal>deploy</goal>
+						</goals>
+					</execution>
 				</executions>
+				<extensions>true</extensions>
+				<configuration>
+					<cloudHubDeployment>
+						<username>apakanat_apps1</username>
+						<password>C@pgemini123</password>
+						<enviroment>SANDBOX</enviroment>
+						<applicationName>devops-mule-p1-try1</applicationName>
+						<muleVersion>4.1.2</muleVersion> <!-- This is the runtime version as it appears on the CloudHub interface -->
+						<properties>
+							<key>value</key>
+						</properties>
+					</cloudHubDeployment>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
@@ -161,6 +190,10 @@
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
+        </pluginRepository>
+        <pluginRepository>
+        	<id>mule-public</id>
+			<url>https://repository.mulesoft.org/nexus/content/repositories/releases</url>
         </pluginRepository>
     </pluginRepositories>
 
