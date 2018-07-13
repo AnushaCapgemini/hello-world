@@ -28,6 +28,11 @@
 					</execution>
 				</executions>
 			</plugin>
+			<plugin>
+				<groupId>org.mule.tools.maven</groupId>
+				<artifactId>mule-maven-plugin</artifactId>
+				<version>2.2.1</version>
+			</plugin>
 			<!-- <plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId>maven-deploy-plugin</artifactId> 
 				<configuration> <skip>true</skip> </configuration> </plugin> -->
 			<plugin>
@@ -79,7 +84,7 @@
 						<password>C@pgemini123</password>
 						<enviroment>SANDBOX</enviroment>
 						<applicationName>sample_mvn</applicationName>
-						<muleVersion>4.1.2</muleVersion> <!-- This is the runtime version as it appears on the CloudHub interface -->
+						<muleVersion>3.8.3</muleVersion> <!-- This is the runtime version as it appears on the CloudHub interface -->
 						<properties>
 							<key>value</key>
 						</properties>
