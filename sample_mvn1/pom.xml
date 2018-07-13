@@ -17,7 +17,7 @@
 		<mule.tools.version>1.2</mule.tools.version>
 		<derby.version>10.12.1.1</derby.version>
 		<uid>apakanat_apps1</uid>
-		<pwd>C@pgemini123</pwd>
+		<pwd>C@@pgemini123</pwd>
 	</properties>
 
 	<build>
@@ -26,6 +26,15 @@
 				<groupId>org.mule.tools.maven</groupId>
 				<artifactId>mule-maven-plugin</artifactId>
 				<version>2.2.1</version>
+				<executions>
+					<execution>
+						<id>deploy</id>
+						<phase>deploy</phase>
+						<goals>
+							<goal>deploy</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.mule.tools.maven</groupId>
