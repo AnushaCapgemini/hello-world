@@ -22,15 +22,31 @@
 
 	<build>
 		<plugins>
-			<!-- <plugin>
+			<plugin>
 				<groupId>org.mule.tools.maven</groupId>
 				<artifactId>mule-app-maven-plugin</artifactId>
 				<version>${mule.tools.version}</version>
 				<extensions>true</extensions>
 				<configuration>
+					<deploymentType>cloudhub</deploymentType>
+					<muleVersion>${mule.version}</muleVersion>
+					<username>${uid}</username>
+					<password>${pwd}</password>
+					<workerType>Micro</workerType>
+					<redeploy>true</redeploy>
+					<environment>SANDBOX</environment>
 					<copyToAppsDirectory>true</copyToAppsDirectory>
 				</configuration>
-			</plugin> -->
+				<executions>
+					<execution>
+						<id>deploy</id>
+						<phase>deploy</phase>
+						<goals>
+							<goal>deploy</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>build-helper-maven-plugin</artifactId>
@@ -55,29 +71,6 @@
 								</resource>
 							</resources>
 						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.mule.tools.maven</groupId>
-				<artifactId>mule-maven-plugin</artifactId>
-				<version>2.0</version>
-				<configuration>
-					<deploymentType>cloudhub</deploymentType>
-					<muleVersion>${mule.version}</muleVersion>
-					<username>${uid}</username>
-					<password>${pwd}</password>
-					<workerType>Micro</workerType>
-					<redeploy>true</redeploy>
-					<environment>SANDBOX</environment>
-				</configuration>
-				<executions>
-					<execution>
-						<id>deploy</id>
-						<phase>deploy</phase>
-						<goals>
-							<goal>deploy</goal>
-						</goals>
 					</execution>
 				</executions>
 			</plugin>
