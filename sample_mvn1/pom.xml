@@ -39,8 +39,8 @@
 					<password>${pwd}</password>
 					<workerType>Micro</workerType>
 					<redeploy>true</redeploy>
-					<environment>SANDBOX</environment>
-					<copyToAppsDirectory>true</copyToAppsDirectory>
+					<environment>Sandbox</environment>
+					<copyToAppsDirectory>false</copyToAppsDirectory>
 				</configuration>
 				<executions>
 					<execution>
