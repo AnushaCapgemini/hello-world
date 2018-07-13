@@ -15,6 +15,9 @@
 
 		<mule.version>3.8.3</mule.version>
 		<mule.tools.version>1.2</mule.tools.version>
+		<derby.version>10.12.1.1</derby.version>
+		<uid>apakanat_apps1</uid>
+		<pwd>C@pgemini123</pwd>
 	</properties>
 
 	<build>
@@ -57,19 +60,14 @@
 			</plugin>
 			<plugin>
 				<groupId>org.mule.tools.maven</groupId>
-				<artifactId>mule-app-maven-plugin</artifactId>
-				<version>1.1</version>
-				<extensions>true</extensions>
-			</plugin>
-			<plugin>
-				<groupId>org.mule.tools.maven</groupId>
 				<artifactId>mule-maven-plugin</artifactId>
-				<version>2.0</version>	
+				<version>2.0</version>
 				<configuration>
 					<deploymentType>cloudhub</deploymentType>
-					<muleVersion>3.8.3</muleVersion>
-					<username>apakanat_apps1</username>
-					<password>C@pgemini123</password>
+					<muleVersion>${mule.version}</muleVersion>
+					<username>${uid}</username>
+					<password>${pwd}</password>
+					<workerType>Micro</workerType>
 					<redeploy>true</redeploy>
 					<environment>SANDBOX</environment>
 				</configuration>
@@ -178,10 +176,6 @@
 			<snapshots>
 				<enabled>false</enabled>
 			</snapshots>
-		</pluginRepository>
-		<pluginRepository>
-			<id>mule-public</id>
-			<url>https://repository.mulesoft.org/nexus/content/repositories/releases</url>
 		</pluginRepository>
 	</pluginRepositories>
 
