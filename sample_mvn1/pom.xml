@@ -21,6 +21,8 @@
 		<pwd>C@pgemini123</pwd>
 	</properties>
 
+	<profiles>
+	<profile>
 	<build>
 		<plugins>
 			<plugin>
@@ -90,7 +92,8 @@
 			</plugin>
 		</plugins>
 	</build>
-
+	</profile>
+</profiles>
 	<!-- Mule Dependencies -->
 	<dependencies>
 		<!-- Xml configuration -->
